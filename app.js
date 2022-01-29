@@ -1,6 +1,5 @@
 const handleBlogRoute = require('./src/routes/blog')
 const querystring = require('querystring')
-const { resolve } = require('path')
 
 // 处理POST请求
 const getPostData = (req) => {
@@ -48,13 +47,17 @@ const serverHandler = (req, res) => {
         req.body = postData
 
         // 调用处理blog路由的方法
-        const blogData = handleBlogRoute(req, res)
-        if (blogData) {
-            res.end(
-                JSON.stringify(blogData)
-            )
+        const blogDataPromise = handleBlogRoute(req, res)
+        // 根据sql语句构建对应的model，当sql语句查询结果为空时，构建出的model中message也为空
+        if (blogDataPromise) {
+            blogDataPromise.then(blogData => {
+                res.end(
+                    JSON.stringify(blogData)
+                )
+            })
             return;
         }
+        
         // 没调到路由，返回出404页面
         res.writeHead(404, { 'Content-Type': 'text/plain' })
         res.write('404 not found')

@@ -12,41 +12,51 @@ const handleBlogRoute = (req, res) => {
         const author = req.query.author || ''
         const keyword = req.query.keyword || ''
         // 从数据库中取出参数对应的数据
-        const listData = getList(author, keyword)
-        // 利用从数据库中取得的数据构建对应的响应model
-        return new SuccessModel(listData)
+        const listDataPromise = getList(author, keyword)
+        return listDataPromise.then(result => {
+            // 利用从数据库中取得的数据构建对应的响应model
+            // 在promise.then()中return的数据无法返回给主函数，需要.then返回
+            // promise.then(return A) 会使这个整体变成A类型
+            return new SuccessModel(result)
+        })
     }
     // 获取博客详情
     if (method == 'GET' && req.path == '/api/blog/detail') {
-        const detailData = getDetail(id)
-        if (detailData) {
-            return new SuccessModel(detailData)
-        } else {
-            return new ErrorModel(detailData)
-        }
+        const detailDataPromise = getDetail(id)
+        return detailDataPromise.then(result => {
+            // 查询结果为一个数组，传入数组第一个元素
+            return new SuccessModel(result[0])
+        })
     }
     // 新增博客
     if (method == 'POST' && req.path == '/api/blog/new') {
-        const newBlogData = createNewBlog(blogData)
-        return new SuccessModel(newBlogData)
+        const newBlogDataPromise = createNewBlog(blogData)
+        // blogData中的author是当前页面登录的用户
+        return newBlogDataPromise.then(id => {
+            return new SuccessModel(id)
+        })
     }
     // 更新博客
     if (method == 'POST' && req.path == '/api/blog/update') {
-        const updateBlogData = updateBlog(id, blogData)
-        if (updateBlogData) {
-            return new SuccessModel('更新博客成功!')
-        } else {
-            return new ErrorModel('更新博客失败!')
-        }
+        const updateBlogDataPromise = updateBlog(id, blogData)
+        return updateBlogDataPromise.then(updateStatus => {
+            if (updateStatus) {
+                return new SuccessModel('更新博客成功!')
+            } else {
+                return new ErrorModel('更新博客失败!')
+            }
+        })
     }
     // 删除博客
     if (method == 'POST' && req.path == '/api/blog/delete') {
-        const deleteBlogData = deleteBlog(id) 
-        if (deleteBlogData) {
-            return new SuccessModel('删除博客成功!')
-        } else {
-            return new ErrorModel('删除博客失败!')
-        }
+        const deleteBlogDataPromise = deleteBlog(id, blogData) 
+        return deleteBlogDataPromise.then(deleteStatus => {
+            if (deleteStatus) {
+                return new SuccessModel('删除博客成功!')
+            } else {
+                return new ErrorModel('删除博客失败!')
+            }
+        })
     }
 }
 
